@@ -113,17 +113,17 @@
                         <div class="_fc-m-tools-r">
                             <template v-if="!inputForm.state">
                                 <slot name="handle"></slot>
-                                <el-button v-if="getConfig('showSaveBtn', false)" type="success" plain size="small"
-                                           @click="handleSave"><i class="fc-icon icon-save-online"></i> {{
-                                        t('props.save')
-                                    }}
-                                </el-button>
                                 <el-button type="primary" plain size="small"
                                            @click="openPreview"><i class="fc-icon icon-preview"></i> {{
                                         t('props.preview')
                                     }}
                                 </el-button>
-                                <el-popconfirm
+                                <el-button v-if="getConfig('showSaveBtn', false)" type="success" plain size="small"
+                                           @click="handleSave"><i class="fc-icon icon-save-online"></i> {{
+                                        t('props.save')
+                                    }}
+                                </el-button>
+                                <el-popconfirm v-if="false"
                                     :title="t('designer.clearWarn')"
                                     width="200px"
                                     :confirm-button-text="t('props.clear')"
@@ -133,6 +133,19 @@
                                         <el-button type="danger" plain size="small"><i
                                             class="fc-icon icon-delete"></i>{{ t('props.clear') }}
                                         </el-button>
+                                    </template>
+                                </el-popconfirm>
+                                <el-popconfirm
+                                    :title="t('designer.exitWarn')"
+                                    width="200px"
+                                    @confirm="handleExit">
+                                    <template #reference>
+                                        <el-button type="danger" size="small" circle><i style="width: 14px;height: 14px"><svg  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><path fill="currentColor" d="M764.288 214.592 512 466.88 259.712 214.592a31.936 31.936 0 0 0-45.12 45.12L466.752 512 214.528 764.224a31.936 31.936 0 1 0 45.12 45.184L512 557.184l252.288 252.288a31.936 31.936 0 0 0 45.12-45.12L557.12 512.064l252.288-252.352a31.936 31.936 0 1 0-45.12-45.184z"></path></svg></i>
+                                        </el-button>
+                                    </template>
+                                    <template #actions="{ confirm, cancel }">
+                                        <el-button size="small" @click="cancel">{{t('props.cancel')}}</el-button>
+                                        <el-button type="danger" size="small" @click="confirm"> {{ t('props.exit') }} </el-button>
                                     </template>
                                 </el-popconfirm>
                                 <el-dropdown trigger="click" size="default" v-if="handle && handle.length">
@@ -273,7 +286,7 @@
                     <el-tabs class="_fd-preview-tabs" v-model="previewStatus">
                         <el-tab-pane :label="t('form.formMode')" name="form"></el-tab-pane>
                         <el-tab-pane :label="t('form.componentMode')" name="component"></el-tab-pane>
-                        <el-tab-pane :label="t('form.htmlMode')" name="html"></el-tab-pane>
+                        <el-tab-pane v-if="false" :label="t('form.htmlMode')" name="html"></el-tab-pane>
                     </el-tabs>
                     <div class="_fd-preview-copy" v-if="['component', 'html'].indexOf(previewStatus) > -1"
                          @click="copyCode">
@@ -371,7 +384,7 @@ export default defineComponent({
         locale: Object,
         handle: Array
     },
-    emits: ['active', 'create', 'copy', 'delete', 'drag', 'inputData', 'save', 'clear'],
+    emits: ['active', 'create', 'copy', 'delete', 'drag', 'inputData', 'save', 'clear', 'exit'],
     setup(props) {
         const {menu, height, mask, locale, handle} = toRefs(props);
         const vm = getCurrentInstance();
@@ -827,6 +840,9 @@ export default defineComponent({
                 data.unloadStatus = false;
                 vm.emit('clear');
             },
+            handleExit() {
+                vm.emit('exit');
+            },
             makeDragRule(children) {
                 return methods.makeChildren([methods.makeDrag(true, 'draggable', children, {
                     add: (inject, evt) => methods.dragAdd(children, evt),
@@ -849,8 +865,10 @@ export default defineComponent({
                 data.preview.option = designerForm.parseJson(options);
                 const useV2 = methods.getConfig('useTemplate', false);
                 data.preview.component = hljs.highlight(
-                    useV2 ? formTemplate(rule, options) : formTemplateV3(rule, options),
-                    {language: 'xml'}
+                    // useV2 ? formTemplate(rule, options) : formTemplateV3(rule, options),
+                    // {language: 'xml'}
+                    designerForm.toJson({ rule: methods.getRule(), option: methods.getOption() }, 2),
+                    {language: 'javascript'}
                 ).value
                 data.preview.html = hljs.highlight(
                     htmlTemplate(rule, options),
@@ -945,7 +963,7 @@ export default defineComponent({
                     hideRequiredAsterisk: false,
                     labelPosition: 'right',
                     size: 'default',
-                    labelWidth: '125px',
+                    labelWidth: '80px',
                     ...defForm,
                     ...options.form || {}
                 };
