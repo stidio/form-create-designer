@@ -49,7 +49,7 @@ class ColaForm {
    * 加载数据
    * 支持: [Designer, Form]
    * @param {string} schema: 表单纲要
-   * @param {string} formData: 表单数据，Designer模式下该参数无效
+   * @param {string} formData: 表单数据（可夹带私数据），Designer模式下该参数无效
    */
   load = (schema, formData) => this.#post('load', schema, formData);
 
@@ -64,6 +64,13 @@ class ColaForm {
    * 支持: [Designer, Form]
    */
   reset = () => this.#post('reset');
+
+  /**
+   * 设置表单项数据（在老数据上合并新数据）
+   * 支持: [Form]
+   * @param {[field]: value} data: 表单项数据集合，可只传入部分数据，可夹带私数据
+   */
+  setFieldsValue = (data) => this.#post('setFieldsValue', data);
 }
 
 export { callEvent, postMessage, ColaForm };
