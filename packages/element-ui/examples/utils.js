@@ -1,11 +1,12 @@
 import { EventEmitter } from 'events';
+import uniqueId from '@form-create/utils/lib/unique';
 
 const callEvent = new EventEmitter();
 function postMessage(channel, message) {
   const callable = window[channel];
   if (typeof callable === 'function') {
     callable(message);
-  } else if (callable !== undefined) {
+  } else if (typeof callable === 'object' && callable.postMessage) {
     callable.postMessage(message);
   } else {
     console.log(channel, message);
@@ -13,6 +14,12 @@ function postMessage(channel, message) {
 }
 
 class ColaForm {
+  constructor() {
+    if (process.env.NODE_ENV === 'development') {
+      this.postMessage = postMessage; // 开发环境构建一个函数方便调试
+    }
+  }
+
   #post(type, ...args) {
     callEvent.emit('colaForm', type, ...args);
   }
@@ -73,4 +80,56 @@ class ColaForm {
   setFieldsValue = (data) => this.#post('setFieldsValue', data);
 }
 
-export { callEvent, postMessage, ColaForm };
+function hookFetch(form) {
+  const orgFetch = form.fetch;
+  form.fetch = (option, effectArgs) => {
+    if (option.action.startsWith('colaForm.$')) {
+      if (!window[option.action]) return; // 未注册channel不处理
+      
+      const session = uniqueId();
+      const sessionTimeout = setTimeout(() => {
+        if (window[option.action][session]) {
+          option.onError?.('timeout');
+          delete window[option.action][session];
+        }
+      }, 30000);
+
+      window[option.action][session] = {
+        setData: (data) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.log(option.action, session, 'setData:', data);
+          }
+
+          try {
+            const body = JSON.parse(data);
+            if (typeof body === 'object' && body !== null && body.hasOwnProperty('error')) {
+              option.onError?.(body.error);
+            } else {
+              option.onSuccess(body);
+            }
+          } catch (e) {
+            option.onError?.(e);
+          }
+
+          delete window[option.action][session];
+          clearTimeout(sessionTimeout);
+        },
+      };
+
+      postMessage(
+        option.action,
+        JSON.stringify({
+          session,
+          id: effectArgs.rule.field,
+          type: effectArgs.rule.type,
+          data: option.data,
+          headers: option.headers,
+        })
+      );
+    } else {
+      return orgFetch(option, effectArgs);
+    }
+  };
+}
+
+export { callEvent, postMessage, ColaForm, hookFetch };

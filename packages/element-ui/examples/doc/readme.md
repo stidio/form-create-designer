@@ -113,3 +113,41 @@ class ColaForm {
 * colaForm.upload.remove
 
   用户删除文件触发，返回当前field的被删除的文件：`{id, file}`
+
+* colaForm.$action
+
+  > 注意一定不能和上面重复
+  
+  ![](colaForm.$action.png)
+  
+  用户在远程数据设置面板中只要符合***`colaForm.$`***为前缀的请求链接，都会别系统拦截，然后按一下方式处理：
+  
+  1. Flutter中通过AddChannel建立通讯通道，如上图中的colaForm.$userList，如果未监听通道系统不会出错，只是下面所有步骤都会被跳过
+  
+  2. 当有数据请求时，页面端首先在通道下构建一个会话: `{session: {setData: (data){...}}}`
+  
+  3. 通过postMessage向通道发送消息`{session, id, type, headers, data}`，例：
+  
+     ```javascript
+     postMessage(
+         'colaForm.$userList', 
+         '{"session":"Fyh1m3033abaaec","id":"Fnaym3032qsoabc","type":"select","data":{"b":"2"},"headers":{"a":"1"}}')
+     ```
+  
+  4. Flutter端收到该消息后根据传递过来的信息获取数据，然后调用`window[#channel][#session].setData()`回填数据
+  
+     > 请注意在30秒内完成，为避免资源泄露会话最长存活时间为30秒
+  
+     ```javascript
+     window['colaForm.$userList']['Fyh1m3033abaaec']
+         .setData('[{"label":"选项01","value":1},{"label":"选项02","value":2},{"label":"选项03","value":3}]')
+     ```
+  
+     如果有错误，返回{error}结构:
+  
+     ```javascript
+     window['colaForm.$userList']['Fyh1m3033abaaec'].setData('{"error": "..."}')
+     ```
+  
+     
+

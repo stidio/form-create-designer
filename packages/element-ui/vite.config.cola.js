@@ -24,7 +24,7 @@ export default defineConfig({
     vue(),
     vueJSX(),
     copy({
-      targets: [{ src: 'examples/readme.md', dest: '../../../Cola/sf' }],
+      targets: [{ src: 'examples/doc/readme.pdf', dest: '../../../Cola/sf' }],
     }),
   ],
 });

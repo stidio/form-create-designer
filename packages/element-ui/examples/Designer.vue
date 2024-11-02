@@ -4,9 +4,9 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
-import { formCreate } from '../src/index';
+import { formCreate, designerForm } from '../src/index';
 import En from "../src/locale/en";
-import { callEvent, postMessage } from "./utils";
+import { callEvent, postMessage, hookFetch } from "./utils";
 
 const designer = ref(null);
 const config = ref({
@@ -20,13 +20,13 @@ const config = ref({
 });
 const locale = ref(null);
 
-const onSave = ({ rule, options }) => {
+function onSave({ rule, options }) {
   postMessage('colaForm.save', `{"rule":${rule.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}, "option":${options.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}}`);
 }
-const onExit = () => {
+function onExit() {
   postMessage('colaForm.exit', formCreate.toJson({ rule: designer.value.getRule(), option: designer.value.getOption() }));
 }
-const onReset = () => {
+function onReset() {
   postMessage('colaForm.reset', formCreate.toJson({ rule: designer.value.getRule(), option: designer.value.getOption() }));
 }
 
@@ -56,6 +56,9 @@ onMounted(() => {
 onUnmounted(() => {
   callEvent.removeAllListeners('colaForm');
 })
+
+hookFetch(designerForm);
+hookFetch(formCreate);
 </script>
 
 <style>

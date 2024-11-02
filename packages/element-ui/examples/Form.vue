@@ -6,7 +6,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
 import { formCreate } from '../src/index';
-import { callEvent, postMessage } from "./utils";
+import { callEvent, hookFetch, postMessage } from "./utils";
 
 const option = ref({});
 const rule = ref([]);
@@ -106,4 +106,5 @@ const onChange = (field) => {
   postMessage('colaForm.change', formCreate.toJson({ id: field, formData: formData.value }));
 }
 
+hookFetch(formCreate);
 </script>
