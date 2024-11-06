@@ -31,9 +31,11 @@ onMounted(() => {
 
     } else if (type === 'setReadonly') {
       disabled.value = args[0];
+      hookUpload(undefined, true);
     } else if (type === 'setPreview') {
       // https://www.form-create.com/v3/guide/global-options
       option.value = { ...option.value ?? {}, preview: args[0] };
+      hookUpload(undefined, true);
     } else if (type === 'load') {
       uploadFields.length = 0;
       const schema = formCreate.parseJson(args[0] ?? '{"rule": [], "option": {}}');
@@ -77,7 +79,7 @@ onUnmounted(() => {
   callEvent.removeAllListeners('colaForm');
 })
 
-function hookUpload(id) {
+function hookUpload(id, onlyStyle = false) {
   if (id != undefined && !uploadFields.some((field) => field.id == id)) return;
 
   setTimeout(() => {
@@ -88,12 +90,21 @@ function hookUpload(id) {
 
       const elUpload = fcUpload.querySelector('.el-upload.el-upload--text');
       if (elUpload) {
-        const button = elUpload.querySelector('button');
-        if (button) {
-          button.onclick = (event) => {
-            postMessage('colaForm.upload', formCreate.toJson({ ...field, files: formData.value[field.id] }));
-            event.stopPropagation();
-          };
+        if (onlyStyle) {
+          const button = elUpload.querySelector('button');
+          if (button) {
+            button.onclick = (event) => {
+              postMessage('colaForm.upload', formCreate.toJson({ ...field, files: formData.value[field.id] }));
+              event.stopPropagation();
+            };
+          }
+        }
+
+        if (disabled.value === true || option.value?.preview === true) {
+          elUpload.style.display = 'none';
+        } else {
+          elUpload.style.display = 'inline-flex';
+          elUpload.style.margin = '0 0 10px';
         }
       }
     });
@@ -108,3 +119,9 @@ const onChange = (field) => {
 
 hookFetch(formCreate);
 </script>
+
+<style>
+  .el-upload-list {
+    margin: 0 !important;
+  }
+</style>
